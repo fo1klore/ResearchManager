@@ -85,7 +85,8 @@ Guide the user with questions, not declarations:
 
 ## Outcome
 
-Update `.research/routes.md` frontmatter:
+Route data lives in `.research/routes.json` (machine-readable) and
+`.research/routes.md` (human-readable, auto-generated).
 
 ```yaml
 ---

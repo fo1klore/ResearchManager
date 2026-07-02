@@ -51,12 +51,36 @@ Every invocation of this skill follows the same entry sequence:
    > • write to log
 
 If `.research/` doesn't exist, ask: "This project doesn't have a research
-manager yet. Initialize it?" If yes, run `scripts/init.sh` in the project
+manager yet. Initialize it?" If yes, run
+`.claude/skills/research-manager/scripts/init.sh .` in the project
 root, then show the menu.
 
 At the end of each interaction, **persist changes** — write back
 `state.json`, append to `log.md`, and save any new/updated files in the
 relevant subdirectory. Summarize what changed as a one-liner.
+
+### Integrity discipline
+
+The `.research/` directory is the **source of truth** — never rely on
+context memory for its state. Follow these rules:
+
+1. **Read before write** — before modifying any file under `.research/`,
+   re-read it from disk with the Read tool. Do NOT use a version cached
+   in context from an earlier turn.
+
+2. **View raw data on request** — when the user asks to see the actual
+   content of any `.research/` file (log, ideas, literature index,
+   state.json, etc.), read it from disk and display it.
+
+3. **Scripts for mutations** — for state changes, prefer calling the
+   deterministic scripts (`.claude/skills/research-manager/scripts/state.sh`,
+   `lit.sh`, `exp.sh`, `route.sh`, `log.sh`) over manual file edits.
+   Scripts are immune to hallucination. User-facing data (ideas, goals,
+   writing) is still best handled via direct Read/Write/Edit.
+
+4. **Re-read summary before presenting** — when showing the status
+   summary or menu, always read `state.json` from disk fresh. Do not
+   summarize from conversation memory.
 
 ---
 
@@ -188,20 +212,19 @@ when they have a new direction to evaluate:
      the evaluation, not the method."
 5. **Log decision** — update `.research/routes.md`.
 
-Routes are stored in a single flat file with frontmatter for machine
-readability. See `scripts/route.sh` for status transitions.
+Routes are stored in `.research/routes.json` with a human-readable
+`.research/routes.md` auto-generated from it.
+See `scripts/route.sh` for status transitions.
 
 ```yaml
----
 routes:
   - id: self-consistency-prm
     title: "Self-consistency + process reward"
-    goal: [improve-math-reasoning]    # references goal(s)
-    status: adopted     # proposed → evaluating → adopted / abandoned
+    goals: ["improve-math-reasoning"]
+    status: adopted
     evaluated: 2026-07-02
     decision: "Novel combination, limited prior work, feasible with existing infra"
-    related_lit: [2203.11171, 2305.20050]
----
+    related_lit: ["2203.11171", "2305.20050"]
 ```
 
 ---
@@ -364,12 +387,12 @@ feasibility, reproducibility, etc.), not the **agent to call**.
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/init.sh <project-dir>` | Create `.research/` skeleton with default state.json |
-| `scripts/lit.sh` | Literature index: `add <arxiv-id>`, `list [status]`, `update <arxiv-id> <field=value>` |
-| `scripts/state.sh` | State read/write: `get <field>`, `set <field>=<value>`, `summary` |
-| `scripts/exp.sh` | Experiment CRUD: `add <name>`, `list`, `status <name> <new-status>` |
-| `scripts/route.sh` | Route transitions: `add`, `status <id> <new-status>`, `list` |
-| `scripts/log.sh` | Log append: `add <type> <message>`, `recent [N]` |
+| `.claude/skills/research-manager/scripts/init.sh <project-dir>` | Scaffold study project (code dirs + data dirs + `.research/` metadata) |
+| `.claude/skills/research-manager/scripts/lit.sh` | Literature index: `add <arxiv-id>`, `list [status]`, `update <arxiv-id> <field=value>` |
+| `.claude/skills/research-manager/scripts/state.sh` | State read/write: `get <field>`, `set <field>=<value>`, `summary` |
+| `.claude/skills/research-manager/scripts/exp.sh` | Experiment CRUD: `add <name>`, `list`, `status <name> <new-status>` |
+| `.claude/skills/research-manager/scripts/route.sh` | Route transitions: `add`, `status <id> <new-status>`, `list` |
+| `.claude/skills/research-manager/scripts/log.sh` | Log append: `add <type> <message>`, `recent [N]` |
 
 These scripts are **optional aids** — they save token cost by replacing
 multi-step Read/Edit cycles with single commands. Use them when the
