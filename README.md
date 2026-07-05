@@ -50,7 +50,8 @@ cp -r /path/to/ResearchManager/* .claude/skills/research-manager/
 
 ### 验证安装
 
-在项目目录中运行入口命令，如果看到初始化提示，说明安装成功。
+在项目目录中启动 Claude Code，输入 `/research-manager`，如果看到初始
+化提示（`.research/` 不存在则询问是否创建），说明安装成功。
 
 ## 快速开始
 
