@@ -36,13 +36,14 @@ Every invocation of this skill follows the same entry sequence:
    check `$LLM_WIKI_PATH` env var, then `~/LLM-Wiki/`.
 3. **Show status summary** — extract from `state.json`:
    - active project name, progress %, current phase
-   - counts: ideas, goals, routes, literature, experiments
+   - counts: ideas, notes, goals, routes, literature, experiments
 4. **Present the menu** — inline, not a big card:
 
    > Current: <project> (<progress>%) — <phase>
    > What would you like to do?
    > • view status / update progress
    > • capture an idea
+   > • create / update a research note
    > • define or evaluate a goal
    > • survey literature / log a paper
    > • explore or log research routes
@@ -101,6 +102,8 @@ conversation with their advisor):
    date: <YYYY-MM-DD>
    source: paper/conversation/reading/other
    status: captured   # captured → filtered → adopted/abandoned
+   summary: <one-line of what the idea is and why it matters>
+   # When abandoned, append "Why abandoned" section to file
    ---
    # <title>
    ## The idea
@@ -108,11 +111,84 @@ conversation with their advisor):
    ## Related work (wiki-found or known)
    ## Open questions
    ```
-3. **Ask about next step** — "Do you want to turn this into a formal
-   research goal? Or keep it as an idea for now?"
+   **Also add an entry** to `.research/ideas/index.json` with slug,
+   title, date, source, status, and summary for fast lookup.
+3. **Ask about next step** — If the idea is promising and the user wants
+   to investigate further:
+   - "Do you want to create a research note for this idea? Research notes
+     are where you investigate an idea—gather evidence, survey related
+     work, assess feasibility—before it matures into a concrete
+     contribution to your project's goal or a paper section."
+   - Otherwise: "Keep it as an idea for now."
+4. **When abandoning** — if the idea is deemed not worth pursuing (because
+   it's been done before, infeasible, or superseded), update `status` to
+   `abandoned` in the file frontmatter **and index**, and **append a
+   "Why abandoned / Lessons learned" section** to the idea file recording
+   the reason. Delete the `summary` field from the frontmatter (so the
+   abandoned state is immediately visible without reading the file). This
+   prevents re-exploration of the same dead end months later.
+5. **When adopting** — update `status` to `adopted` in the file frontmatter
+   and index, then create a research note as described above.
 
-Ideas don't need an elaborate triage system. The user decides when to
-promote one to a goal.
+Ideas that are adopted become **research notes** (see the [notes](#notes--research-notes) module). The
+project has a single goal; all ideas converge toward it through investigation.
+
+---
+
+### notes — Research notes
+
+A research note is an intermediate investigation artifact. It serves two
+purposes:
+
+1. **Idea development**: When an idea is adopted, you create a note to
+   investigate it — gather preliminary evidence, survey related work,
+   assess feasibility. When sufficiently grounded, the findings feed into
+   the project's single goal or a paper draft.
+2. **Paper writing intermediates**: While writing a paper, you may survey a
+   specific subtopic, analyze a method, or organize related work. These are
+   also notes, linked to the relevant paper via `related_papers`.
+
+**Status lifecycle:** `in-progress → solidified → archived`
+
+- `in-progress`: actively investigating
+- `solidified`: investigation has a conclusion (results feed into goal, paper, or route)
+- `archived`: abandoned or superseded
+
+**Types (as tags, not strict schema):**
+
+| Type | Purpose |
+|------|---------|
+| `idea-development` | Exploring an adopted idea, connecting it to the project goal |
+| `paper-writing` | Writing-related survey, analysis, or synthesis |
+| `technical-analysis` | Deep dive on a method, algorithm, or phenomenon |
+| `literature-digest` | Multi-paper synthesis comparing findings |
+
+**Note file:** `.research/notes/<slug>.md`:
+```markdown
+---
+id: <slug>
+title: <title>
+type: idea-development
+created: <YYYY-MM-DD>
+updated: <YYYY-MM-DD>
+status: in-progress
+related_ideas: []
+related_papers: []
+---
+# <title>
+## Overview / Motivation
+## Key findings / Progress
+## Open questions / Next steps
+## Links
+```
+
+**When creating or updating a note:**
+1. Check `.research/notes/index.json` for existing notes on the same topic — update instead of duplicate.
+2. Link to source ideas (`related_ideas`) or papers (`related_papers`) as appropriate.
+3. Use `scripts/notes.sh add` to create the index entry and template file.
+4. Use `scripts/notes.sh status` to transition between states.
+
+See `references/notes-protocol.md` for the full protocol.
 
 ---
 
@@ -304,7 +380,8 @@ the current `state.json` and renders:
 ```
 📋 <project name>
 Phase: <phase>  |  Progress: <progress>%
-• ideas: <N>     • goals: active <N> / archived <N>
+• ideas: <N>     • notes: <N> active / <N> solidified
+   • goals: active <N> / archived <N>
 • literature: <N> surveyed, <N> to-read
 • routes: active <N> / abandoned <N>
 • experiments: <N> completed, <N> planned
@@ -392,6 +469,7 @@ feasibility, reproducibility, etc.), not the **agent to call**.
 | `.claude/skills/research-manager/scripts/state.sh` | State read/write: `get <field>`, `set <field>=<value>`, `summary` |
 | `.claude/skills/research-manager/scripts/exp.sh` | Experiment CRUD: `add <name>`, `list`, `status <name> <new-status>` |
 | `.claude/skills/research-manager/scripts/route.sh` | Route transitions: `add`, `status <id> <new-status>`, `list` |
+| `.claude/skills/research-manager/scripts/notes.sh` | Research notes CRUD: `add <slug> --title "..."`, `list [status]`, `status <slug> <new-status>`, `rm <slug>` |
 | `.claude/skills/research-manager/scripts/log.sh` | Log append: `add <type> <message>`, `recent [N]` |
 
 These scripts are **optional aids** — they save token cost by replacing
@@ -408,6 +486,8 @@ Read these when their module is active:
 
 - `references/goal-framework.md` — Evaluation dimensions for research
   goals (novelty, feasibility, value, timing)
+- `references/notes-protocol.md` — Research notes lifecycle, types,
+  creation and transition workflows
 - `references/literature-protocol.md` — Search strategies, dedup rules,
   note-taking standards for literature
 - `references/route-exploration.md` — Divergence → convergence process,

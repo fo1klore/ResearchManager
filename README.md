@@ -6,13 +6,14 @@
 
 ## 概述
 
-ResearchManager 帮助系统性地管理科研项目。它将科研流程分解为**灵感 → 目标 → 文献 → 技术路线 → 实验 → 写作**的标准化链路，每个环节都有对应的操作指南和脚本工具，让科研管理有章可循。
+ResearchManager 帮助系统性地管理科研项目。它将科研流程分解为**灵感 → 调研笔记 → 目标 → 文献 → 技术路线 → 实验 → 写作**的标准化链路，每个环节都有对应的操作指南和脚本工具，让科研管理有章可循。
 
 ## 功能特性
 
 | 模块 | 功能 | 参考文件 |
 |------|------|---------|
 | 💡 **灵感** (ideas) | 捕捉原始想法，记录来源和后续行动 | — |
+| 📝 **调研笔记** (notes) | 想法调研期到目标过渡的中间产物，也覆盖论文写作的中间调研产出 | `references/notes-protocol.md` |
 | 🎯 **目标** (goals) | 从新颖性、可行性、价值、时机四个维度评估研究方向 | `references/goal-framework.md` |
 | 📚 **文献** (literature) | 检索论文、记录笔记、追踪阅读进度 | `references/literature-protocol.md` |
 | 🧭 **路线** (route) | 发散收敛探索技术方案，记录决策理由防止重复探索 | `references/route-exploration.md` |
@@ -68,6 +69,10 @@ your-research-project/
 │   ├── log.md                    ← 研究日志
 │   ├── routes.json               ← 路线数据（机器可读）
 │   ├── ideas/                    ← 灵感笔记
+│   │   └── index.json            ← 灵感索引（含状态和摘要）
+│   ├── notes/                    ← 调研笔记
+│   │   ├── index.json            ← 笔记索引
+│   │   └── <slug>.md             ← 各笔记详情
 │   ├── goals/                    ← 研究目标
 │   ├── literature/
 │   │   ├── index.json            ← 文献索引
@@ -100,6 +105,19 @@ your-research-project/
 捕捉原始研究想法——一个直觉、一篇刚读的论文、和导师的谈话。记录为 Markdown 文件并标注来源和状态。
 
 **流程**：`captured → filtered → adopted / abandoned`
+
+被采纳的想法进入**调研笔记**阶段进行深入调研后再汇聚到项目目标。
+
+### 📝 调研笔记 (Notes)
+
+调研笔记是灵感与目标之间的中间层，也管理论文写作中的中间产出：
+
+- **想法调研**：一个想法被采纳后，创建调研笔记进行初步调研（收集证据、调研相关工作），积累充分后汇聚到项目唯一目标
+- **论文写作中间产物**：写论文时对某个子方向、技术方法、相关工作的调研/分析
+
+**类型标签**：`idea-development` | `paper-writing` | `technical-analysis` | `literature-digest`
+
+**状态生命周期**：`in-progress → solidified → archived`
 
 ### 🎯 目标 (Goals)
 
@@ -157,18 +175,19 @@ your-research-project/
 
 ```
 📋 项目名称
-Phase: literature-survey  |  Progress: 25%
-• ideas: 3     • goals: active 1 / archived 2
-• literature: 5 surveyed, 2 to-read
-• routes: active 1 / abandoned 1
-• experiments: 2 completed, 1 planned
-• writing: 1 paper(s)
-Latest: [2026-07-02] **[experiment]** Baseline completed
+阶段: 文献调研  |  进度: 25%
+• 灵感: 3     • 调研笔记: 1 活跃 / 1 已沉淀
+• 目标: 1 活跃 / 2 已归档
+• 文献: 5 篇已调研，2 篇待读
+• 路线: 1 条活跃 / 1 条已放弃
+• 实验: 2 个完成 / 1 个计划中
+• 写作: 1 篇论文
+最新: [2026-07-02] **[实验]** 基线实验完成
 ```
 
 ## 脚本参考
 
-ResearchManager 提供了 6 个辅助脚本，用于高效的机械化操作（如索引更新、状态切换）。它们用 Bash + 内联 Python 编写。
+ResearchManager 提供了 7 个辅助脚本，用于高效的机械化操作（如索引更新、状态切换）。它们用 Bash + 内联 Python 编写。
 
 | 脚本 | 命令 | 用途 |
 |------|------|------|
@@ -177,6 +196,7 @@ ResearchManager 提供了 6 个辅助脚本，用于高效的机械化操作（�
 | `scripts/exp.sh` | `add/list/status/rm` | 实验 CRUD 和状态转换 |
 | `scripts/lit.sh` | `add/list/update/rm` | 文献索引管理（按 arXiv ID 索引） |
 | `scripts/route.sh` | `add/list/status/rm` | 路线状态转换，自动生成 `routes.md` |
+| `scripts/notes.sh` | `add/list/status/rm` | 调研笔记 CRUD 和状态转换 |
 | `scripts/log.sh` | `add/recent/grep` | 追加和检索研究日志 |
 
 ## Wiki 集成
@@ -232,6 +252,7 @@ ResearchManager/
 │   └── settings.local.json                 ← 权限配置
 ├── references/                             ← 参考协议文件
 │   ├── goal-framework.md                   │   目标评估框架
+│   ├── notes-protocol.md                   │   调研笔记协议
 │   ├── literature-protocol.md              │   文献调研协议
 │   ├── route-exploration.md                │   技术路线探索
 │   ├── experiment-templates.md             │   实验模板
@@ -243,26 +264,9 @@ ResearchManager/
     ├── exp.sh                              │   实验管理
     ├── lit.sh                              │   文献管理
     ├── route.sh                            │   路线管理
+    ├── notes.sh                            │   调研笔记
     └── log.sh                              │   日志管理
 ```
-
-## SKILL.md 的作用
-
-`SKILL.md` 是这个项目的核心入口——它定义了每个模块的操作协议、与 Wiki 的交互规则、辅助脚本的使用场景。
-
-修改 SKILL.md 即可改变行为，无需编译或部署。
-
-## 开发与贡献
-
-### 修改内容
-
-修改 `SKILL.md`、`references/` 或 `scripts/` 下的文件后，更新已安装项目时需要重新复制文件。
-
-### 提交变更
-
-1. 修改文件
-2. 提交前展示变更内容并确认 commit message
-3. 再执行 `git commit`
 
 ## 许可
 

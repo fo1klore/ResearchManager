@@ -38,6 +38,7 @@ fi
 # ── .research/ directories ──
 mkdir -p "$RESEARCH_DIR"/ideas
 mkdir -p "$RESEARCH_DIR"/goals
+mkdir -p "$RESEARCH_DIR"/notes
 mkdir -p "$RESEARCH_DIR"/literature/readings
 mkdir -p "$RESEARCH_DIR"/literature/searches
 mkdir -p "$RESEARCH_DIR"/experiments
@@ -57,6 +58,8 @@ cat > "$RESEARCH_DIR/config.json" <<CONFIG
 CONFIG
 
 echo '{}' > "$RESEARCH_DIR/literature/index.json"
+echo '{}' > "$RESEARCH_DIR/ideas/index.json"
+echo '{"notes":[]}' > "$RESEARCH_DIR/notes/index.json"
 
 cat > "$RESEARCH_DIR/experiments/index.json" <<'EXPINDEX'
 {
@@ -80,6 +83,7 @@ cat > "$RESEARCH_DIR/state.json" <<STATE
   "stats": {
     "ideas": 0,
     "goals_active": 0,
+    "notes_active": 0,
     "literature_surveyed": 0,
     "routes_active": 0,
     "experiments_completed": 0,
